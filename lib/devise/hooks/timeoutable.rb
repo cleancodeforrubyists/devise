@@ -9,8 +9,14 @@ Warden::Manager.after_set_user do |record, warden, options|
   scope = options[:scope]
   env   = warden.request.env
 
-  if record && record.respond_to?(:timedout?) && warden.authenticated?(scope) &&
-     options[:store] != false && !env['devise.skip_timeoutable']
+  required_methods_present = record.respond_to?(:timedout?)
+  record_authenticated = warden.authenticated?(scope)
+  session_serializable = options[:store] != false
+  timeout_enabled = !env['devise.skip_timeoutable']
+
+  if record_authenticated && timeout_enabled &&
+     required_methods_present && session_serializable
+
     last_request_at = warden.session(scope)['last_request_at']
 
     if last_request_at.is_a? Integer
